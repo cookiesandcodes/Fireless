@@ -1,0 +1,65 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <ArduinoJson.h>
+
+// WiFi Parameters
+const char* ssid = "edrd";
+const char* password = "qweasdzxc";
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED_BUILTIN, OUTPUT); 
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to..."); 
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.print("\n");
+}
+
+void loop() {
+  // Check WiFi Status
+  if (WiFi.status() == WL_CONNECTED) {
+    blink();
+    HTTPClient http;  //Object of class HTTPClient
+    http.begin("http://www.fireless.xyz/_functions/contacts/00000001");  
+    int httpCode = http.GET();                  
+    if (httpCode > 0) {                                                                                 //Check the returning code
+      String payload = http.getString();                                                                // Get the request response payload
+      const size_t bufferSize = JSON_OBJECT_SIZE(5)+157;                                                // TODO: Parsing
+      DynamicJsonBuffer jsonBuffer(bufferSize);
+      JsonObject& root = jsonBuffer.parseObject(http.getString());
+      int id = root["id"]; // 1                                                                         // Parameters
+      const char* number = root["number"];                                                              // "+639xxxxxxxxx"
+      const char* honorific = root["honorific"];                                                        // "Mr."
+      const char* firstName = root["firstName"];                                                        // "Juan"
+      const char* lastName = root["lastName"];                                                          // "Dela Cruz"
+      const char* unit = root["unit"];                                                                  // "Excelsior Bldg."
+      // Output to serial monitor
+      Serial.print("Number:");
+      Serial.println(number);
+      Serial.print("honorific:");
+      Serial.println(honorific);
+      Serial.print("firstName:"); 
+      Serial.println(firstName);
+      Serial.print("lastName:"); 
+      Serial.println(lastName);
+      Serial.print("unit:"); 
+      Serial.println(unit);
+
+      
+    }
+    http.end();   //Close connection
+  }
+  // Delay
+  delay(1000);
+}
+
+
+void blink(){
+  digitalWrite(LED_BUILTIN, LOW);   
+  delay(500);                      
+  digitalWrite(LED_BUILTIN, HIGH);  
+  delay(800);                      
+}
